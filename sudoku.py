@@ -64,7 +64,7 @@ class Sudoku:
         return s
 
     def __repr__(self):
-        return str(self.poss)
+        return str(self.places)
     
     def DisplayPossibilities(self, toshow):
         s = ""
@@ -145,3 +145,7 @@ for i in range(9):
 print(x)
 
 a = Sudoku()
+a.add(0,2,1)
+a.add(2,3,1)
+a.add(3,6,1)
+a.add(7,7,1)
