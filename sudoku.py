@@ -34,13 +34,15 @@ class Sudoku:
     """basic structure of sudoku"""
     def __init__(self):
         """
-        places        -- Basically it's the sudoku
-        poss[i][j][k] -- if number k+1 can be inserted in line i, collum j
-        lines[i][k]   -- how many possible positions for number k+1 in line i
-        collums[i][k] -- how many possible positions for number k+1 in collum i
-        squares[i][k] -- how many possible positions for number k+1 in square i
-        nodes[i][j]   -- how many possible numbers for node in line i and collum j
+        Create an empty Sudoku
         """
+        # places        -- Basically it's the sudoku
+        # poss[i][j][k] -- if number k+1 can be inserted in line i, collum j
+        # lines[i][k]   -- how many possible positions for number k+1 in line i
+        # collums[i][k] -- how many possible positions for number k+1 in collum i
+        # squares[i][k] -- how many possible positions for number k+1 in square i
+        # nodes[i][j]   -- how many possible numbers for node in line i and collum j
+
         self.places = [[None for j in range(9)] for i in range(9)]
         self.poss = [[[True for k in range(9)] for j in range(9)] for i in range(9)]
         self.lines   = [[9 for j in range(9)] for i in range(9)]
