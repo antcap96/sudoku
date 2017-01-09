@@ -21,6 +21,18 @@ import numpy as nu
 # iterate over square:    l//3*3+i//3 c//3*3+i%3
 # or if given the square: s//3*3+i//3 s%3*3+i%3
 
+class InsertionError(Exception):
+    def __init__(self, sudoku, row, col, number):
+        """
+        Exception for a failure to insert number at (row,col) in sudoku
+        """
+        self.row = row
+        self.col = col
+        self.number = number
+        self.sudoku = sudoku
+    def __str__(self):
+        return ("Failed to insert " + str(self.number) +" at (" + str(self.row) + "," + str(self.col) + ")\nThe sudoku:\n" + str(self.sudoku))
+
 def GetSquare(row,col):
     """
     The square of the node in (row,col)
@@ -46,7 +58,7 @@ class Sudoku:
 
         self.places = [[None for j in range(9)] for i in range(9)]
         self.poss = [[[True for k in range(9)] for j in range(9)] for i in range(9)]
-        self.rows   = [[9 for j in range(9)] for i in range(9)]
+        self.rows    = [[9 for j in range(9)] for i in range(9)]
         self.columns = [[9 for j in range(9)] for i in range(9)]
         self.squares = [[9 for j in range(9)] for i in range(9)]
         self.nodes   = [[9 for j in range(9)] for i in range(9)]
@@ -159,7 +171,7 @@ class Sudoku:
             # define number
             self.places[row][col] = number
         else:
-            print("fuckfuckfuck")
+            raise InsertionError(self,row,col,number)
 
     def SolveRun(self):
         """
@@ -260,3 +272,13 @@ test1.Add(8,7,7)
 test1.Add(8,8,9)
 
 print(test1)
+
+import random as ra
+
+test2 = Sudoku()
+
+for i in range(60):
+    try:
+        test2.Add(ra.randint(0,8), ra.randint(0,8), ra.randint(1,9))
+    except InsertionError:
+        pass
