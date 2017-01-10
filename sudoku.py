@@ -1,4 +1,5 @@
 import numpy as nu
+import copy as cp
 
 # The squares are the big ones and the nodes the small ones btw
 #   0 1 2   3 4 5   6 7 8
@@ -33,6 +34,16 @@ class InsertionError(Exception):
     def __str__(self):
         return ("Failed to insert " + str(self.number) +" at (" + str(self.row) + "," + str(self.col) + ")\nThe sudoku:\n" + str(self.sudoku))
 
+class SudokuError(Exception):
+    def __init__(self, sudoku):
+        """
+        Execption for and unsolvable sudoku 
+        """
+        self.sudoku = sudoku
+    def __str__(self):
+        return ("Impossible sudoku:\n" + str(self.sudoku))
+        
+    
 def GetSquare(row,col):
     """
     The square of the node in (row,col)
@@ -122,6 +133,11 @@ class Sudoku:
                 s += "+-------+-------+-------+\n"                 
         print(s)
 
+    def Solved(self):
+        """
+        return whether or not the sudoku is solved
+        """
+        return self.missing == 0
     def ClearColumn(self, col, number):
         for i in range(9):
             if self.poss[i][col][number-1]:
@@ -204,7 +220,7 @@ class Sudoku:
             for k in range(9):
                 if self.rows[i][k] == 0:
                     return -1
-                elif self.rows[i][k] == 1:
+                if self.rows[i][k] == 1:
                     pos = [self.poss[i][x][k] for x in range(9)].index(True)
                     self.Add(i,pos,k+1)
                     added +=1
@@ -239,7 +255,7 @@ class Sudoku:
 
     def CheckFailure(self):
         """
-        Returns if sudoku has is sure to have failled
+        Returns if sudoku is sure to have failled
         """
         for i in range(9):
             for j in range(9):
@@ -270,64 +286,96 @@ class Sudoku:
                 return True
             else:
                 return False
+
+    def Solve(self):
+        """
+        Solve Sudoku
+        """
+        issolved , sol = self.HardSolve()
+        if not issolved:
+            raise SudokuError(self)
+        else:
+            # sol is the solution of the sudoku, so it's copied to self
+            self.places = sol.places
+            self.poss = sol.poss
+            self.rows    = sol.rows
+            self.columns = sol.columns
+            self.squares = sol.squares
+            self.nodes   = sol.nodes
+            self.missing = 0
+            
+            
+    def HardSolve(self):
+        """
+        Auxiliary function used by Solve (does the hard work but has weird output)
         
-    
-x = Sudoku()
-print("______________________________________________________________________")
-# print(x)
-for i in range(9):
-    for j in range(9):
-        x.Add(i,j,(i*3+j+i//3)%9+1)
-# print(x)
+        Return:
+        duplet (x,y)
+        x -- whether or not the sudoku has a solution
+        y -- the solved sudoku for the case in which x is true
+        """
 
-a = Sudoku()
-a.Add(0,2,1)
-a.Add(2,3,1)
-a.Add(3,6,1)
-a.Add(7,7,1)
+        # Do a SoftSolve. If False the sudoku is impossible, if True and solved, return
+        if self.SoftSolve() == False:
+            return (False,None)
+        elif self.Solved():
+            return (True,self)
+        # Unable to determine solution of sudoku, begin guessing
 
-test1 = Sudoku()
-test1.Add(0,0,5)
-test1.Add(0,1,3)
-test1.Add(0,4,7)
-test1.Add(1,0,6)
-test1.Add(1,3,1)
-test1.Add(1,4,9)
-test1.Add(1,5,5)
-test1.Add(2,1,9)
-test1.Add(2,2,8)
-test1.Add(2,7,6)
+        chances = self.Guess()
 
-test1.Add(3,0,8)
-test1.Add(3,4,6)
-test1.Add(3,8,3)
-test1.Add(4,0,4)
-test1.Add(4,3,8)
-test1.Add(4,5,3)
-test1.Add(4,8,1)
-test1.Add(5,0,7)
-test1.Add(5,4,2)
-test1.Add(5,8,6)
+        for row, col, number in chances:
+            sudoku_ = cp.deepcopy(self)
+            sudoku_.Add(row,col,number)
+            issolved, sol = sudoku_.HardSolve()
+            if issolved:
+                # print(sudoku_)
+                return (True,sol)
+        return (False,None)
+                
+        
+    def Guess(self):
+        """
+        Look for the lowest diversion choice possible.
+        In any reasonable sudoku this is any node/row/column/square with 2 possibilities
 
-test1.Add(6,1,6)
-test1.Add(6,6,2)
-test1.Add(6,7,8)
-test1.Add(7,3,4)
-test1.Add(7,4,1)
-test1.Add(7,5,9)
-test1.Add(7,8,5)
-test1.Add(8,4,8)
-test1.Add(8,7,7)
-test1.Add(8,8,9)
+        Return:
+        list of tuple of the form (row,column,number)
+        """
+        ans = []
+        for n in range(2,9):
+            # Search in rows
+            for i in range(9):
+                for k in range(9):
+                    if self.rows[i][k] == n:
+                        for x in range(9):
+                            if self.poss[i][x][k]:
+                                ans.append((i,x,k+1))
+                        return ans
 
-print(test1)
-
-import random as ra
-
-test2 = Sudoku()
-
-for i in range(60):
-    try:
-        test2.Add(ra.randint(0,8), ra.randint(0,8), ra.randint(1,9))
-    except InsertionError:
-        pass
+            # Search in columns
+            for i in range(9):
+                for k in range(9):
+                    if self.columns[i][k] == n:
+                        for x in range(9):
+                            if self.poss[x][i][k]:
+                                ans.append((x,i,k+1))
+                        return ans
+                        
+            # Search in squares
+            for i in range(9):
+                for k in range(9):
+                    if self.squares[i][k] == n:
+                        for x in range(9):
+                            if self.poss[i//3*3+x//3][i%3*3+x%3][k]:
+                                ans.append((i//3*3+x//3,i%3*3+x%3,k+1))
+                        return ans
+                        
+            # Search in nodes
+            for i in range(9):
+                for j in range(9):
+                    if self.nodes[i][j] == n:
+                        for x in range(9):
+                            if self.poss[i][j][x]:
+                                ans.append((i,j,x+1))
+                        return ans
