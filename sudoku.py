@@ -97,7 +97,8 @@ class Sudoku:
             if k >= 0:
                 s += str(k+1) + "\n"
                 for i in range(9):
-                    s += ("  " if i%3==0 else "") + str(self.columns[i][k]) + " "
+                    s += ("  " if i%3==0 else "") + \
+                         (str(self.columns[i][k]) if self.columns[i][k] >= 0 else "x") + " "
                 s += "\n"
                 for i,row in enumerate(self.poss):
                     if i%3 == 0:
@@ -106,7 +107,8 @@ class Sudoku:
                         if j%3 == 0:
                             s += "| "
                         s += ("*"  if p[k]  else " ")  + " "
-                    s += "| " + str(self.rows[i][k]) + "   " + str(self.squares[i][k]) + "\n"
+                    s += "| " + (str(self.rows[i][k]   ) if self.rows[i][k] >=0     else "x") + \
+                        "   " + (str(self.squares[i][k]) if self.squares[i][k] >= 0 else "x") + "\n"
                 s += "+-------+-------+-------+\n"
             else:
                 for i,row in enumerate(self.nodes):
@@ -124,22 +126,37 @@ class Sudoku:
         for i in range(9):
             if self.poss[i][col][number-1]:
                 self.Clear(i,col,number)
+        if self.columns[col][number-1] == 0:
+            self.columns[col][number-1] = -1
+        else:
+            raise BaseException("Column " + str(col) +" "+ str(number)) 
 
     def ClearRow(self, row, number):
         for i in range(9):
             if self.poss[row][i][number-1]:
                 self.Clear(row,i,number)
+        if self.rows[row][number-1] == 0:
+            self.rows[row][number-1] = -1
+        else:
+            raise BaseException("Row " + str(row) +" "+ str(number)) 
 
     def ClearSquare(self, square, number):
         for i in range(9):
             if self.poss[square//3*3+i//3][square%3*3+i%3][number-1]:
                 self.Clear(square//3*3+i//3,square%3*3+i%3,number)
+        if self.squares[square][number-1] == 0:
+            self.squares[square][number-1] = -1
+        else:
+            raise BaseException("Square " + str(square) +" "+ str(number)) 
 
     def ClearNode(self, row, col):
         for i in range(9):
             if self.poss[row][col][i]:
                 self.Clear(row,col,i+1)
-                
+        if self.nodes[row][col] == 0:
+            self.nodes[row][col] = -1
+        else:
+            raise BaseException("Node " + str(row) +" "+ str(number)) 
         
     def Clear(self, row, col, number):
         if self.poss[row][col][number-1]:
@@ -179,18 +196,23 @@ class Sudoku:
 
         Return:
         Successful additions to Sudoku
+        returns -1 if detects that sudoku does not have solution
         """
         added = 0
         # Solve for rows
         for i in range(9):
             for k in range(9):
-                if self.rows[i][k] == 1:
+                if self.rows[i][k] == 0:
+                    return -1
+                elif self.rows[i][k] == 1:
                     pos = [self.poss[i][x][k] for x in range(9)].index(True)
                     self.Add(i,pos,k+1)
                     added +=1
         # Solve for columns
         for i in range(9):
             for k in range(9):
+                if self.columns[i][k] == 0:
+                    return -1
                 if self.columns[i][k] == 1:
                     pos = [self.poss[x][i][k] for x in range(9)].index(True)
                     self.Add(pos,i,k+1)
@@ -198,6 +220,8 @@ class Sudoku:
         # Solve for squares
         for i in range(9):
             for k in range(9):
+                if self.squares[i][k] == 0:
+                    return -1
                 if self.squares[i][k] == 1:
                     pos = [self.poss[i//3*3+x//3][i%3*3+x%3][k] for x in range(9)].index(True)
                     self.Add(i//3*3+pos//3,i%3*3+pos%3,k+1)
@@ -205,22 +229,47 @@ class Sudoku:
         # Solve for nodes
         for i in range(9):
             for j in range(9):
+                if self.nodes[i][j] == 0:
+                    return -1
                 if self.nodes[i][j] == 1:
                     pos = self.poss[i][j].index(True)
                     self.Add(i,j,pos+1)
                     added +=1
         return added
-                             
+
+    def CheckFailure(self):
+        """
+        Returns if sudoku has is sure to have failled
+        """
+        for i in range(9):
+            for j in range(9):
+                if self.rows[i][j] == 0:
+                    return True
+                if self.columns[i][j] == 0:
+                    return True
+                if self.squares[i][j] == 0:
+                    return True
+                if self.nodes[i][j] == 0:
+                    return True
+        return False
+        
+    
     def SoftSolve(self):
         """
         Attempts to solve sudoku without guessing
         
         Return:
-        Whether is successful or not
+        If the sudoku is possible to have a solution
+        Note: A solved sudoku *might* have a solution
         """
-        while self.SolveRun() > 0:
-            pass
-        return self.missing == 0
+        while True:
+            sol = self.SolveRun()
+            if sol > 0:
+                continue
+            elif sol == 0:
+                return True
+            else:
+                return False
         
     
 x = Sudoku()
