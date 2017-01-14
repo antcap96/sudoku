@@ -255,7 +255,7 @@ class Sudoku:
 
     def CheckFailure(self):
         """
-        Returns if sudoku is sure to have failled
+        Returns if sudoku is sure to have no solution
         """
         for i in range(9):
             for j in range(9):
@@ -291,18 +291,18 @@ class Sudoku:
         """
         Solve Sudoku
         """
-        issolved , sol = self.HardSolve()
-        if not issolved:
+        sol = self.HardSolve()
+        if sol == None:
             raise SudokuError(self)
         else:
             # sol is the solution of the sudoku, so it's copied to self
-            self.places = sol.places
-            self.poss = sol.poss
+            self.places  = sol.places
+            self.poss    = sol.poss
             self.rows    = sol.rows
             self.columns = sol.columns
             self.squares = sol.squares
             self.nodes   = sol.nodes
-            self.missing = 0
+            self.missing = sol.missing
             
             
     def HardSolve(self):
@@ -310,28 +310,23 @@ class Sudoku:
         Auxiliary function used by Solve (does the hard work but has weird output)
         
         Return:
-        duplet (x,y)
-        x -- whether or not the sudoku has a solution
-        y -- the solved sudoku for the case in which x is true
+        Solved sudoku (none if the sudoku does not have a solution)
         """
 
-        # Do a SoftSolve. If False the sudoku is impossible, if True and solved, return
+        # Do a SoftSolve. If False the sudoku is impossible, if True check if solved
         if self.SoftSolve() == False:
-            return (False,None)
-        elif self.Solved():
-            return (True,self)
+            return None
+        if self.Solved():
+            return self
+        
         # Unable to determine solution of sudoku, begin guessing
-
-        chances = self.Guess()
-
-        for row, col, number in chances:
+        for row, col, number in self.Guess():
             sudoku_ = cp.deepcopy(self)
             sudoku_.Add(row,col,number)
-            issolved, sol = sudoku_.HardSolve()
-            if issolved:
-                # print(sudoku_)
-                return (True,sol)
-        return (False,None)
+            sol = sudoku_.HardSolve()
+            if sol != None:
+                return sol
+        return None
                 
         
     def Guess(self):
