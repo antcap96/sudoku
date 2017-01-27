@@ -338,7 +338,7 @@ class Sudoku:
         list of tuple of the form (row,column,number)
         """
         ans = []
-        for n in range(2,9):
+        for n in range(2,10):
             # Search in rows
             for i in range(9):
                 for k in range(9):
