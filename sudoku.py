@@ -1,4 +1,3 @@
-import numpy as nu
 import copy as cp
 
 # The squares are the big ones and the nodes the small ones btw
